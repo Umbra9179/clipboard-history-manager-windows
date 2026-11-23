@@ -1,0 +1,44 @@
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using clipboard-history-manager-windows.Models;
+
+namespace clipboard-history-manager-windows.ViewModels.Settings
+{
+    public partial class FiltersPageViewModel : ObservableObject
+    {
+        public SettingsContext SettingsContext { get; } = App.Current.SettingsContext;
+
+        public void AddOwnerAppFilter(string name, string pattern)
+        {
+            SettingsContext.OwnerAppFilters.Add(new(name.Trim(), pattern.Trim()));
+            SettingsContext.SaveOwnerAppFilters();
+        }
+
+        public void EditOwnerAppFilter(OwnerAppFilter filter, string newName, string newPattern)
+        {
+            filter.Name = newName.Trim();
+
+            newPattern = newPattern.Trim();
+            if (!newPattern.Equals(filter.Pattern))
+            {
+                filter.Pattern = newPattern;
+                filter.FilteredCount = 0;
+            }
+
+            SettingsContext.SaveOwnerAppFilters();
+        }
+
+        #region Commands
+
+        [RelayCommand]
+        private void DeleteOwnerAppFilter(OwnerAppFilter? filter)
+        {
+            if (filter is null) return;
+
+            SettingsContext.OwnerAppFilters.Remove(filter);
+            SettingsContext.SaveOwnerAppFilters();
+        }
+
+        #endregion
+    }
+}

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "clipboard-history-manager-windows (MSIX)": {
+      "commandName": "MsixPackage",
+      "nativeDebugging": false
+    }
+  }
+}

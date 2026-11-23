@@ -1,0 +1,639 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace"/>
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string"/>
+              <xsd:attribute name="type" type="xsd:string"/>
+              <xsd:attribute name="mimetype" type="xsd:string"/>
+              <xsd:attribute ref="xml:space"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string"/>
+              <xsd:attribute name="name" type="xsd:string"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1"/>
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3"/>
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4"/>
+              <xsd:attribute ref="xml:space"/>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required"/>
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="WindowTitle.Text" xml:space="preserve">
+    <value>{0} - Ayarlar</value>
+  </data>
+  <data name="PageTitle_General.Content" xml:space="preserve">
+    <value>Genel</value>
+  </data>
+  <data name="PageTitle_Personalization.Content" xml:space="preserve">
+    <value>Kişiselleştirme</value>
+  </data>
+  <data name="PageTitle_Clipboard.Content" xml:space="preserve">
+    <value>Pano</value>
+  </data>
+  <data name="PageTitle_Metadata.Content" xml:space="preserve">
+    <value>Metadata</value>
+  </data>
+  <data name="PageTitle_Tags.Content" xml:space="preserve">
+    <value>Etiketler</value>
+  </data>
+  <data name="PageTitle_Storage.Content" xml:space="preserve">
+    <value>Depolama</value>
+  </data>
+  <data name="PageTitle_Filters.Content" xml:space="preserve">
+    <value>Filtreler</value>
+  </data>
+  <data name="PageTitle_About.Content" xml:space="preserve">
+    <value>Hakkında</value>
+  </data>
+  <data name="General_AppLanguage.Header" xml:space="preserve">
+    <value>Uygulama dili</value>
+  </data>
+  <data name="General_AppLanguage.Description" xml:space="preserve">
+    <value>Uygulama dilini seçin veya sistem varsayılanını kullanın</value>
+  </data>
+  <data name="General_AppLanguage_Default.Content" xml:space="preserve">
+    <value>Varsayılan</value>
+  </data>
+  <data name="General_AppLanguage_Arabic.Content" xml:space="preserve">
+    <value>Arapça</value>
+  </data>
+  <data name="General_AppLanguage_ChineseSimplified.Content" xml:space="preserve">
+    <value>Çince (Basitleştirilmiş)</value>
+  </data>
+  <data name="General_AppLanguage_English.Content" xml:space="preserve">
+    <value>İngilizce</value>
+  </data>
+  <data name="General_AppLanguage_French.Content" xml:space="preserve">
+    <value>Fransızca</value>
+  </data>
+  <data name="General_AppLanguage_German.Content" xml:space="preserve">
+    <value>Almanca</value>
+  </data>
+  <data name="General_AppLanguage_Greek.Content" xml:space="preserve">
+    <value>Yunanca</value>
+  </data>
+  <data name="General_AppLanguage_Italian.Content" xml:space="preserve">
+    <value>İtalyanca</value>
+  </data>
+  <data name="General_AppLanguage_Japanese.Content" xml:space="preserve">
+    <value>Japonca</value>
+  </data>
+  <data name="General_AppLanguage_Korean.Content" xml:space="preserve">
+    <value>Korece</value>
+  </data>
+  <data name="General_AppLanguage_Polish.Content" xml:space="preserve">
+    <value>Lehçe</value>
+  </data>
+  <data name="General_AppLanguage_Portuguese.Content" xml:space="preserve">
+    <value>Portekizce</value>
+  </data>
+  <data name="General_AppLanguage_Spanish.Content" xml:space="preserve">
+    <value>İspanyolca</value>
+  </data>
+  <data name="General_AppLanguage_Turkish.Content" xml:space="preserve">
+    <value>Türkçe</value>
+  </data>
+  <data name="General_AppLanguage_Ukrainian.Content" xml:space="preserve">
+    <value>Ukraynaca</value>
+  </data>
+  <data name="General_AppLanguageFlyout.Title" xml:space="preserve">
+    <value>Yeniden başlatma gerekli</value>
+  </data>
+  <data name="General_AppLanguageFlyout.Subtitle" xml:space="preserve">
+    <value>Uygulama dilini değiştirmek için programı yeniden başlatmanız gerekir</value>
+  </data>
+  <data name="General_AppLanguageFlyoutButton.Content" xml:space="preserve">
+    <value>Uygulamayı yeniden başlat</value>
+  </data>
+  <data name="General_ShortcutsSection.Text" xml:space="preserve">
+    <value>Kısayollar</value>
+  </data>
+  <data name="General_ActivationShortcut.Header" xml:space="preserve">
+    <value>Etkinleştirme kısayolu</value>
+  </data>
+  <data name="General_ActivationShortcut.Description" xml:space="preserve">
+    <value>Pano yöneticisini açmak için kısayol kombinasyonunu ayarlayın</value>
+  </data>
+  <data name="General_StartupSection.Text" xml:space="preserve">
+    <value>Başlangıç</value>
+  </data>
+  <data name="General_AlwaysRunAsAdmin.Content" xml:space="preserve">
+    <value>Her zaman yönetici olarak çalıştır</value>
+  </data>
+  <data name="General_RunAtStartup.Header" xml:space="preserve">
+    <value>Başlangıçta çalıştır</value>
+  </data>
+  <data name="General_RunAtStartup.Description" xml:space="preserve">
+    <value>Windows’a giriş yaptığınızda clipboard-history-manager-windows’i otomatik başlat</value>
+  </data>
+  <data name="General_StartupWarning.Title" xml:space="preserve">
+    <value>Başlangıç Windows tarafından devre dışı bırakıldı</value>
+  </data>
+  <data name="General_StartupWarning.Message" xml:space="preserve">
+    <value>Bu uygulamanın başlangıçta çalışması için Windows Görev Yöneticisi veya Ayarlar’dan etkinleştirin</value>
+  </data>
+  <data name="General_SettingsStartupButton.Content" xml:space="preserve">
+    <value>Windows Ayarlarında aç</value>
+  </data>
+  <data name="General_NotificationOnStartup.Header" xml:space="preserve">
+    <value>Başlangıçta bildirim</value>
+  </data>
+  <data name="General_NotificationOnStartup.Description" xml:space="preserve">
+    <value>Uygulama açıldıktan sonra bildirim göster</value>
+  </data>
+  <data name="Personalization_AppTheme.Header" xml:space="preserve">
+    <value>Uygulama teması</value>
+  </data>
+  <data name="Personalization_AppTheme.Description" xml:space="preserve">
+    <value>Uygulama arayüzü için tercih ettiğiniz temayı seçin</value>
+  </data>
+  <data name="Personalization_AppTheme_Default.Content" xml:space="preserve">
+    <value>Varsayılan</value>
+  </data>
+  <data name="Personalization_AppTheme_Light.Content" xml:space="preserve">
+    <value>Açık</value>
+  </data>
+  <data name="Personalization_AppTheme_Dark.Content" xml:space="preserve">
+    <value>Koyu</value>
+  </data>
+  <data name="Personalization_BackgroundSection.Text" xml:space="preserve">
+    <value>Arkaplan</value>
+  </data>
+  <data name="Personalization_Backdrop.Header" xml:space="preserve">
+    <value>Arka plan efekti</value>
+  </data>
+  <data name="Personalization_Backdrop.Description" xml:space="preserve">
+    <value>Penceredeki arka plan efektini değiştir</value>
+  </data>
+  <data name="Personalization_Backdrop_None.Content" xml:space="preserve">
+    <value>Yok</value>
+  </data>
+  <data name="Personalization_Backdrop_Acrylic.Content" xml:space="preserve">
+    <value>Acrylic</value>
+  </data>
+  <data name="Personalization_Backdrop_ThinAcrylic.Content" xml:space="preserve">
+    <value>Thin Acrylic</value>
+  </data>
+  <data name="Personalization_Backdrop_Mica.Content" xml:space="preserve">
+    <value>Mica</value>
+  </data>
+  <data name="Personalization_Backdrop_MicaAlt.Content" xml:space="preserve">
+    <value>Mica Alt</value>
+  </data>
+  <data name="Personalization_BackgroundColor.Header" xml:space="preserve">
+    <value>Arkaplan rengi</value>
+  </data>
+  <data name="Personalization_BackgroundColor.Description" xml:space="preserve">
+    <value>Penceredeki arka plan rengini değiştir</value>
+  </data>
+  <data name="Personalization_ClipPreviewLayoutSection.Text" xml:space="preserve">
+    <value>Klip önizleme düzeni</value>
+  </data>
+  <data name="Personalization_CompactView.Header" xml:space="preserve">
+    <value>Kompakt görünüm</value>
+  </data>
+  <data name="Personalization_CompactView.Description" xml:space="preserve">
+    <value>Alan kazanmak için klipleri kompakt, tek satırlı biçimde gösterir</value>
+  </data>
+  <data name="Personalization_CompactView_HoverPreview.Content" xml:space="preserve">
+    <value>İmleç üzerine gelindiğinde klip önizlemesini göster</value>
+  </data>
+  <data name="Personalization_TimestampFormat.Header" xml:space="preserve">
+    <value>Zaman damgası biçimi</value>
+  </data>
+  <data name="Personalization_TimestampFormat.Description" xml:space="preserve">
+    <value>Klipleri kesin zaman damgası veya geçen süreyle görüntülemeyi seçin</value>
+  </data>
+  <data name="Personalization_TimestampFormat_Absolute.Content" xml:space="preserve">
+    <value>Mutlak</value>
+  </data>
+  <data name="Personalization_TimestampFormat_Relative.Content" xml:space="preserve">
+    <value>Göreceli</value>
+  </data>
+  <data name="Personalization_ClipboardWindowSection.Text" xml:space="preserve">
+    <value>Pano penceresi</value>
+  </data>
+  <data name="Personalization_WindowPosition.Header" xml:space="preserve">
+    <value>Pano penceresi konumu</value>
+  </data>
+  <data name="Personalization_WindowPosition.Description" xml:space="preserve">
+    <value>Pencerenin ekrandaki konumunu özelleştirin</value>
+  </data>
+  <data name="Personalization_WindowPosition_Caret.Content" xml:space="preserve">
+    <value>Caret</value>
+  </data>
+  <data name="Personalization_WindowPosition_Cursor.Content" xml:space="preserve">
+    <value>Fare konumu</value>
+  </data>
+  <data name="Personalization_WindowPosition_ScreenCenter.Content" xml:space="preserve">
+    <value>Ekran ortası</value>
+  </data>
+  <data name="Personalization_WindowPosition_LastPosition.Content" xml:space="preserve">
+    <value>Son konum</value>
+  </data>
+  <data name="Personalization_WindowPosition_Right.Content" xml:space="preserve">
+    <value>Sağ</value>
+  </data>
+  <data name="Personalization_WindowPosition_RightCorner.Content" xml:space="preserve">
+    <value>Sağ köşe</value>
+  </data>
+  <data name="Personalization_WindowWidth.Header" xml:space="preserve">
+    <value>Genişlik</value>
+  </data>
+  <data name="Personalization_WindowWidth.Description" xml:space="preserve">
+    <value>Pencerenin genişliğini ayarlayın (piksel cinsinden)</value>
+  </data>
+  <data name="Personalization_WindowHeight.Header" xml:space="preserve">
+    <value>Yükseklik</value>
+  </data>
+  <data name="Personalization_WindowHeight.Description" xml:space="preserve">
+    <value>Pencerenin yüksekliğini ayarlayın (piksel cinsinden)</value>
+  </data>
+  <data name="Personalization_WindowMargin.Header" xml:space="preserve">
+    <value>Kenar boşluğu</value>
+  </data>
+  <data name="Personalization_WindowMargin.Description" xml:space="preserve">
+    <value>Pencerenin kenar boşluğunu ayarlayın (piksel cinsinden)</value>
+  </data>
+  <data name="Personalization_WindowMouseResize.Header" xml:space="preserve">
+    <value>Fare ile yeniden boyutlandır</value>
+  </data>
+  <data name="Personalization_WindowMouseResize.Description" xml:space="preserve">
+    <value>Pencereyi fare imlecini kullanarak kenarlarını sürükleyerek yeniden boyutlandırmayı etkinleştir</value>
+  </data>
+  <data name="Clipboard_ClipsSection.Text" xml:space="preserve">
+    <value>Klipler</value>
+  </data>
+  <data name="Clipboard_DragAndDrop.Header" xml:space="preserve">
+    <value>Sürükle ve Bırak</value>
+  </data>
+  <data name="Clipboard_DragAndDrop.Description" xml:space="preserve">
+    <value>Klipler için sürükle ve bırak özelliğini etkinleştir</value>
+  </data>
+  <data name="Clipboard_DeveloperStringCaseConversions.Header" xml:space="preserve">
+    <value>Geliştiriciler için metin biçimi dönüştürmeleri</value>
+  </data>
+  <data name="Clipboard_DeveloperStringCaseConversions.Description" xml:space="preserve">
+    <value>Metni Camel Case, Pascal Case, Snake Case ve Kebab Case biçimlerine dönüştürmek için gelişmiş komutları etkinleştirin</value>
+  </data>
+  <data name="Clipboard_ClipMovingToTopOnCopying.Header" xml:space="preserve">
+    <value>Kopyalanan klibi üste taşı</value>
+  </data>
+  <data name="Clipboard_ClipMovingToTopOnCopying.Description" xml:space="preserve">
+    <value>Etkinleştirildiğinde, panodan kopyaladığınız klipler otomatik olarak listenin en üstüne taşınır, böylece daha hızlı erişirsiniz</value>
+  </data>
+  <data name="Clipboard_SearchBarSection.Text" xml:space="preserve">
+    <value>Arama çubuğu</value>
+  </data>
+  <data name="Clipboard_SearchBoxFocus.Header" xml:space="preserve">
+    <value>Arama çubuğu odağı</value>
+  </data>
+  <data name="Clipboard_SearchBoxFocus.Description" xml:space="preserve">
+    <value>Pencere açıldığında arama alanı otomatik olarak odaklanır</value>
+  </data>
+  <data name="Clipboard_ClearSearchOnOpen.Header" xml:space="preserve">
+    <value>Açılışta aramayı temizle</value>
+  </data>
+  <data name="Clipboard_ClearSearchOnOpen.Description" xml:space="preserve">
+    <value>Pencere açıldığında arama metnini temizle</value>
+  </data>
+  <data name="Clipboard_TabsSection.Text" xml:space="preserve">
+    <value>Sekmeler</value>
+  </data>
+  <data name="Clipboard_SetInitialTabOnOpen.Header" xml:space="preserve">
+    <value>Açılışta başlangıç sekmesini ayarla</value>
+  </data>
+  <data name="Clipboard_SetInitialTabOnOpen.Description" xml:space="preserve">
+    <value>Pencere açıldığında Ana Menü ile başla</value>
+  </data>
+  <data name="Clipboard_OtherSection.Text" xml:space="preserve">
+    <value>Diğer</value>
+  </data>
+  <data name="Clipboard_RememberPinState.Header" xml:space="preserve">
+    <value>Pencere sabitleme durumunu hatırla</value>
+  </data>
+  <data name="Clipboard_RememberPinState.Description" xml:space="preserve">
+    <value>Pencerenin sabitlenip sabitlenmediğini hatırlar ve bir sonraki açılışta aynı şekilde açar</value>
+  </data>
+  <data name="Clipboard_ClipCopyMessage.Header" xml:space="preserve">
+    <value>Kopyalama onay mesajı</value>
+  </data>
+  <data name="Clipboard_ClipCopyMessage.Description" xml:space="preserve">
+    <value>İçerik panoya kopyalandığında kısa bir mesaj göster</value>
+  </data>
+  <data name="Metadata_LinkPreviewSection.Text" xml:space="preserve">
+    <value>Bağlantı önizleme</value>
+  </data>
+  <data name="Metadata_LinkPreview.Header" xml:space="preserve">
+    <value>Bağlantı önizleme</value>
+  </data>
+  <data name="Metadata_LinkPreview.Description" xml:space="preserve">
+    <value>Bağlantı önizleme bilgilerini yükler. Daha önce yüklenen veriler değişmeden kalır</value>
+  </data>
+  <data name="Metadata_ColorPreviewSection.Text" xml:space="preserve">
+    <value>Renk önizleme</value>
+  </data>
+  <data name="Metadata_HexColorPrefix.Header" xml:space="preserve">
+    <value>Hex renk öneki zorunlu</value>
+  </data>
+  <data name="Metadata_HexColorPrefix.Description" xml:space="preserve">
+    <value>Etkinleştirildiğinde yalnızca '#' ile başlayan onaltılık renk kodları geçerli kabul edilir</value>
+  </data>
+  <data name="Tags_Tags.Header" xml:space="preserve">
+    <value>Etiketler</value>
+  </data>
+  <data name="Tags_Tags.Description" xml:space="preserve">
+    <value>Özel etiketler oluşturun ve bunları kliplerinize atayın</value>
+  </data>
+  <data name="Tags_TagsButton.Content" xml:space="preserve">
+    <value>Etiket ekle</value>
+  </data>
+  <data name="Tags_Tag_ClipsCount.Text" xml:space="preserve">
+    <value>Klip sayısı: {0}</value>
+  </data>
+  <data name="Storage_EraseData.Header" xml:space="preserve">
+    <value>Pano verisi temizle</value>
+  </data>
+  <data name="Storage_EraseData.Description" xml:space="preserve">
+    <value>Bilgisayardan kaydedilmiş pano öğelerini kaldır</value>
+  </data>
+  <data name="Storage_EraseDataButton.Content" xml:space="preserve">
+    <value>Verileri sil</value>
+  </data>
+  <data name="Storage_EraseData_FlyoutHeader.Text" xml:space="preserve">
+    <value>Tüm pano verilerini sil</value>
+  </data>
+  <data name="Storage_EraseData_FlyoutDescription.Text" xml:space="preserve">
+    <value>Tüm pano verileri tercihleriniz doğrultusunda silinecek</value>
+  </data>
+  <data name="Storage_EraseData_FlyoutButton.Content" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="Storage_EraseData_RemoveFavoriteClips.Content" xml:space="preserve">
+    <value>Favori klipleri sil</value>
+  </data>
+  <data name="Storage_EraseData_RemoveWithProtectedTags.Content" xml:space="preserve">
+    <value>Korumalı etiketli klipleri sil</value>
+  </data>
+  <data name="Storage_BackupSection.Text" xml:space="preserve">
+    <value>Yedekle</value>
+  </data>
+  <data name="Storage_ExportClips.Header" xml:space="preserve">
+    <value>Pano geçmişini dışa aktar</value>
+  </data>
+  <data name="Storage_ExportClips.Description" xml:space="preserve">
+    <value>Tüm klipleri yedek bir dosyaya kaydedin. Bu işlem birkaç dakika sürebilir</value>
+  </data>
+  <data name="Storage_ExportButton.Content" xml:space="preserve">
+    <value>Dışa Aktar</value>
+  </data>
+  <data name="Storage_ImportClips.Header" xml:space="preserve">
+    <value>Yedek dosyadan klipleri içe aktarın</value>
+  </data>
+  <data name="Storage_ImportClips.Description" xml:space="preserve">
+    <value>Yedek dosyasından klipleri geri yükleyin. Dosya boyutuna bağlı olarak bu işlem biraz zaman alabilir</value>
+  </data>
+  <data name="Storage_ImportButton.Content" xml:space="preserve">
+    <value>İçe Aktar</value>
+  </data>
+  <data name="Storage_ImportWarning.Message" xml:space="preserve">
+    <value>Eski verilerin içe aktarılması, saklama süresinin dışında kalan veya maksimum klip sınırını aşan bazı kliplerin silinmesine neden olabilir</value>
+  </data>
+  <data name="Storage_CleanupSection.Text" xml:space="preserve">
+    <value>Temizlik</value>
+  </data>
+  <data name="Storage_CleanupType.Header" xml:space="preserve">
+    <value>Temizlik türü</value>
+  </data>
+  <data name="Storage_CleanupType.Description" xml:space="preserve">
+    <value>Ne kadar eski kliplerin silineceğini belirtin</value>
+  </data>
+  <data name="Storage_CleanupType_RetentionPeriod.Content" xml:space="preserve">
+    <value>Saklama süresi</value>
+  </data>
+  <data name="Storage_CleanupType_Quantity.Content" xml:space="preserve">
+    <value>Miktar</value>
+  </data>
+  <data name="Storage_CleanupQuantity.Header" xml:space="preserve">
+    <value>Maksimum klip sayısı</value>
+  </data>
+  <data name="Storage_CleanupQuantity.Description" xml:space="preserve">
+    <value>Diskte saklanabilecek maksimum klip sayısını belirler</value>
+  </data>
+  <data name="Storage_RetentionPeriod.Header" xml:space="preserve">
+    <value>Veri saklama süresi</value>
+  </data>
+  <data name="Storage_RetentionPeriod.Description" xml:space="preserve">
+    <value>Pano verilerinin diskte ne kadar süre saklanacağını belirtin</value>
+  </data>
+  <data name="Storage_RetentionPeriod_Daily.Content" xml:space="preserve">
+    <value>Günlük</value>
+  </data>
+  <data name="Storage_RetentionPeriod_Weekly.Content" xml:space="preserve">
+    <value>Haftalık</value>
+  </data>
+  <data name="Storage_RetentionPeriod_Monthly.Content" xml:space="preserve">
+    <value>Aylık</value>
+  </data>
+  <data name="Storage_RetentionPeriod_Always.Content" xml:space="preserve">
+    <value>Her zaman</value>
+  </data>
+  <data name="Storage_FavoriteClipsCleaning.Header" xml:space="preserve">
+    <value>Favori klip temizliği</value>
+  </data>
+  <data name="Storage_FavoriteClipsCleaning.Description" xml:space="preserve">
+    <value>Saklama süresini aşan favori klipleri kaldırır</value>
+  </data>
+  <data name="Storage_ClipLimitsSection.Text" xml:space="preserve">
+    <value>Klip sınırları</value>
+  </data>
+  <data name="Storage_SizeLimit.Header" xml:space="preserve">
+    <value>Klip boyut sınırları</value>
+  </data>
+  <data name="Storage_SizeLimit.Description" xml:space="preserve">
+    <value>Klip başına izin verilen maksimum boyutu ayarlayın. Bu sınırı aşan klipler yok sayılır</value>
+  </data>
+  <data name="Storage_MaxClipSize.Header" xml:space="preserve">
+    <value>Maks. klip boyutu</value>
+  </data>
+  <data name="Storage_MaxClipSize.Description" xml:space="preserve">
+    <value>Klip başına izin verilen maks. boyut (MB)</value>
+  </data>
+  <data name="Storage_ClipSizeWarning.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Disk kullanımını arttırabilir</value>
+  </data>
+  <data name="Filters_OwnerFilters.Header" xml:space="preserve">
+    <value>Sahip uygulama filtreleri</value>
+  </data>
+  <data name="Filters_OwnerFilters.Description" xml:space="preserve">
+    <value>Pano yöneticisi bu programlardan hiçbir veri kaydetmez</value>
+  </data>
+  <data name="Filters_OwnerFiltersButton.Content" xml:space="preserve">
+    <value>Filtre ekle</value>
+  </data>
+  <data name="Filters_OwnerFiltersWarning.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Filtreleme, UWP ve WebView2 uygulamalarında doğru çalışmayabilir</value>
+  </data>
+  <data name="Filters_Filter_ClipsCount.Text" xml:space="preserve">
+    <value>Filtrelenmiş klipler: {0}</value>
+  </data>
+  <data name="ShortcutDialog_Title.Text" xml:space="preserve">
+    <value>Etkinleştirme kısayolu</value>
+  </data>
+  <data name="ShortcutDialog_Subtitle.Text" xml:space="preserve">
+    <value>Bu kısayolu değiştirmek için bir tuş kombinasyonuna basın</value>
+  </data>
+  <data name="ShortcutDialog_ErrorInfo.Title" xml:space="preserve">
+    <value>Geçersiz kısayol</value>
+  </data>
+  <data name="ShortcutDialog_ErrorInfo.Message" xml:space="preserve">
+    <value>Kısayol Windows tuşu, Ctrl, Alt veya Shift ile başlamalıdır</value>
+  </data>
+  <data name="TagDialog_Title.Text" xml:space="preserve">
+    <value>Etiketi düzenle</value>
+  </data>
+  <data name="TagDialog_Name.PlaceholderText" xml:space="preserve">
+    <value>İsim</value>
+  </data>
+  <data name="TagDialog_CleanupCheckBox.Content" xml:space="preserve">
+    <value>Bu etiketle kliplerin temizlenmesine izin ver</value>
+  </data>
+  <data name="FilterDialog_Title.Text" xml:space="preserve">
+    <value>Filtreyi düzenle</value>
+  </data>
+  <data name="FilterDialog_Name.PlaceholderText" xml:space="preserve">
+    <value>İsim</value>
+  </data>
+  <data name="FilterDialog_Pattern.PlaceholderText" xml:space="preserve">
+    <value>Desen</value>
+  </data>
+  <data name="FilterDialog_ExampleButton.Content" xml:space="preserve">
+    <value>Desen Örnekleri</value>
+  </data>
+  <data name="FilterDialog_TeachingTip.Title" xml:space="preserve">
+    <value>Desen Örnekleri</value>
+  </data>
+  <data name="About_DevelopedBy" xml:space="preserve">
+    <value>{0} tarafından geliştirildi</value>
+  </data>
+  <data name="About_WriteReviewHyperlink.Content" xml:space="preserve">
+    <value>Yorum yaz</value>
+  </data>
+  <data name="Onboarding_Title.Text" xml:space="preserve">
+    <value>clipboard-history-manager-windows’ye hoş geldiniz</value>
+  </data>
+  <data name="Onboarding_Subtitle.Text" xml:space="preserve">
+    <value>Yeni pano yöneticiniz</value>
+  </data>
+  <data name="Onboarding_SettingsHeader.Text" xml:space="preserve">
+    <value>Hadi birkaç ayarı hızlıca özelleştirip hazırlayalım</value>
+  </data>
+  <data name="Onboarding_QuickTipInfo.Title" xml:space="preserve">
+    <value>Hızlı ipucu</value>
+  </data>
+  <data name="Onboarding_QuickTipInfo.Message" xml:space="preserve">
+    <value>clipboard-history-manager-windows sistem tepsisinde sessizce çalışır. Kısayola basarak pano geçmişinizi istediğiniz zaman açabilirsiniz.</value>
+  </data>
+  <data name="Onboarding_GetStartedButton.Content" xml:space="preserve">
+    <value>Başla</value>
+  </data>
+</root>

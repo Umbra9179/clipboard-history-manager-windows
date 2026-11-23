@@ -1,0 +1,12 @@
+<Solution>
+  <Configurations>
+    <Platform Name="ARM64" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="clipboard-history-manager-windows/clipboard-history-manager-windows.csproj">
+    <Platform Solution="*|ARM64" Project="ARM64" />
+    <Platform Solution="*|x64" Project="x64" />
+    <Deploy />
+  </Project>
+  <Project Path="clipboard-history-manager-windows.Core/clipboard-history-manager-windows.Core.vcxproj" Id="581b3ba8-437b-4ff0-a6a2-ef94bbb1747b" />
+</Solution>

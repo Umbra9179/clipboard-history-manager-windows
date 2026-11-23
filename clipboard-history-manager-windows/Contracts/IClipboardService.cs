@@ -1,0 +1,114 @@
+﻿using clipboard-history-manager-windows.Core;
+using clipboard-history-manager-windows.Helper;
+using clipboard-history-manager-windows.Models;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace clipboard-history-manager-windows.Contracts
+{
+    /// <summary>
+    /// Defines the contract for the core clipboard management service.
+    /// Handles monitoring, processing new clips, managing the clip collection,
+    /// interacting with storage, and setting data back to the system clipboard.
+    /// </summary>
+    public interface IClipboardService
+    {
+        /// <summary>
+        /// Occurs when a new clip, processed from a system clipboard update, has been added to the collection.
+        /// </summary>
+        event EventHandler<ClipboardEventArgs> NewClipAdded;
+
+        /// <summary>
+        /// Occurs when an existing clip is moved to the top of the collection,
+        /// usually due to being re-copied or explicitly moved by user action.
+        /// </summary>
+        event EventHandler<ClipboardEventArgs> ClipMovedToTop;
+
+        /// <summary>
+        /// Occurs when a clip has been deleted from the collection.
+        /// </summary>
+        event EventHandler<ClipboardEventArgs> ClipDeleted;
+
+        /// <summary>
+        /// Occurs when clips collection has been updated.
+        /// </summary>
+        event EventHandler<ClipboardEventArgs> ClipsCollectionChanged;
+
+        /// <summary>
+        /// Gets the in-memory list of tracked clips (<see cref="ClipModel"/>).
+        /// This list represents the current working collection displayed to the user.
+        /// </summary>
+        IList<ClipModel> Clips { get; }
+
+        /// <summary>
+        /// Sets the data into the system clipboard.
+        /// </summary>
+        /// <param name="data">The data models dictionary.</param>
+        /// <param name="caseType">Optional. If specified, converts the text data to the specific test case.</param>
+        /// <returns><c>true</c> if the clipboard was successfully updated; otherwise, <c>false</c>.</returns>
+        bool SetClipboardData(Dictionary<ClipboardFormat, DataModel> data, TextCaseType? caseType = null);
+
+        /// <summary>
+        /// Adds a new clip model to the beginning of the collection and persists it to storage.
+        /// </summary>
+        /// <param name="clip">The new clip model to add.</param>
+        void AddClip(ClipModel clip);
+
+        /// <summary>
+        /// Insert new clips to main collection and sort them
+        /// </summary>
+        /// <param name="clips">Clips to insert</param>
+        void InsertClips(IEnumerable<ClipModel> clips);
+
+        /// <summary>
+        /// Moves the specified existing clip to the beginning (top) of the collection
+        /// and updates its timestamp in persistent storage.
+        /// </summary>
+        /// <param name="clip">The clip model to move.</param>
+        void MoveClipToTop(ClipModel clip);
+
+        /// <summary>
+        /// Toggles the <see cref="ClipModel.IsFavorite"/> status for the specified clip
+        /// and updates the change in persistent storage.
+        /// </summary>
+        /// <param name="clip">The clip model whose favorite status should be changed.</param>
+        void ToggleClipFavorite(ClipModel clip);
+
+        /// <summary>
+        /// Saves clipboard content from the specified <paramref name="dataModel"/> to the given file path.
+        /// If the clipboard contains a file, it is copied to the destination folder.
+        /// If it contains text, a new file is created and the text is written to it.
+        /// </summary>
+        /// <param name="dataModel">The clipboard data to save, including its format and content.</param>
+        /// <param name="newFilePath">The full destination file path, including the file name, where the clipboard content will be saved.</param>
+        Task SaveClipToFileAsync(DataModel dataModel, string newFilePath);
+
+        /// <summary>
+        /// Deletes the specified clip from the in-memory collection and optionally from persistent storage.
+        /// Also handles unregistering the associated owner if necessary.
+        /// </summary>
+        /// <param name="clip">The clip model to delete.</param>
+        /// <param name="deleteFromDb">If <c>true</c>, also delete the clip from persistent storage; otherwise, only remove from the in-memory collection.</param>
+        void DeleteClip(ClipModel clip, bool deleteFromDb = true);
+
+        /// <summary>
+        /// Deletes clips from the collection and persistent storage that are older than the specified cutoff time.
+        /// </summary>
+        /// <param name="cutoffTime">The date and time threshold. Clips older than this will be deleted.</param>
+        /// <param name="deleteFavoriteClips">If <c>true</c>, favorite clips older than the cutoff time will also be deleted; otherwise, they will be preserved.</param>
+        void DeleteOldClipsByTime(DateTime cutoffTime, bool deleteFavoriteClips);
+
+        /// <summary>
+        /// Deletes old clips from the collection and persistent storage if there are more than <paramref name="quantity"/>.
+        /// </summary>
+        /// <param name="quantity">Number of clips to leave.</param>
+        /// <param name="deleteFavoriteClips">If <c>true</c>, old favorite clips will also be deleted; otherwise, they will be preserved.</param>
+        void DeleteOldClipsByQuantity(int quantity, bool deleteFavoriteClips);
+
+        /// <summary>
+        /// Deletes all filtered clips from the collection and persistent storage.
+        /// </summary>
+        void DeleteClipsByFilter(Func<ClipModel, bool> clipsFilter);
+    }
+}

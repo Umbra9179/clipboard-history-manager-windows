@@ -1,0 +1,419 @@
+﻿using clipboard-history-manager-windows.Contracts;
+using clipboard-history-manager-windows.Core;
+using clipboard-history-manager-windows.Helper;
+using clipboard-history-manager-windows.Models;
+using clipboard-history-manager-windows.Models.Metadata;
+using clipboard-history-manager-windows.Views.BriefMessage;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
+using Windows.Storage;
+
+namespace clipboard-history-manager-windows.Services
+{
+    public partial class ClipboardService : IClipboardService
+    {
+        public event EventHandler<ClipboardEventArgs>? NewClipAdded;
+        public event EventHandler<ClipboardEventArgs>? ClipMovedToTop;
+        public event EventHandler<ClipboardEventArgs>? ClipDeleted;
+        public event EventHandler<ClipboardEventArgs>? ClipsCollectionChanged;
+
+        public IList<ClipModel> Clips { get; private set; }
+
+        private readonly IStorageService _storageService;
+        private readonly IOwnerService _ownerService;
+        private readonly ITagService _tagService;
+        private readonly ILinkPreviewService _linkPreviewService;
+        private readonly ClipboardMonitor _clipboardMonitor;
+
+        private readonly SettingsContext _settingsContext = App.Current.SettingsContext;
+
+        public ClipboardService(
+            IStorageService storageService,
+            IOwnerService ownerService,
+            ITagService tagService,
+            ILinkPreviewService linkPreviewService,
+            ClipboardMonitor clipboardMonitor)
+        {
+            _storageService = storageService;
+            _ownerService = ownerService;
+            _tagService = tagService;
+            _linkPreviewService = linkPreviewService;
+            _clipboardMonitor = clipboardMonitor;
+            _clipboardMonitor.ContentDetected += ClipboardMonitor_ContentDetected;
+
+            Clips = ReadClipsFromStorage();
+        }
+
+        public bool SetClipboardData(Dictionary<ClipboardFormat, DataModel> data, TextCaseType? caseType = null)
+        {
+            var dataMap = new Dictionary<ClipboardFormat, string>();
+
+            foreach (var item in data)
+            {
+                string finalData = item.Value.Data;
+
+                // Apply Text Case transformation if needed
+                if (item.Key == ClipboardFormat.Text && caseType.HasValue)
+                {
+                    finalData = finalData.ConvertText(caseType.Value);
+                }
+
+                dataMap[item.Key] = finalData;
+            }
+
+            return _clipboardMonitor.SetClipboardData(dataMap);
+        }
+
+        public void AddClip(ClipModel clip)
+        {
+            Clips.Insert(0, clip);
+            _storageService.AddClip(clip, GetNonEmptyOwnerId(clip));   // Don't save empty owner id
+
+            if (clip.Data.TryGetValue(ClipboardFormat.Text, out var textData))
+            {
+                if (textData.Data.IsValidColor(_settingsContext.IsHexColorPrefixRequired))
+                {
+                    ColorMetadataModel colorMetadata = new();
+                    textData.Metadata = colorMetadata;
+                    _storageService.AddColorMetadata(colorMetadata, textData.Id);
+                }
+                else
+                {
+                    // Detect if the new clip contains a link
+                    clip.IsLink = Uri.TryCreate(textData.Data, UriKind.Absolute, out var uri)
+                        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+
+                    if (_settingsContext.IsLinkPreviewLoadingEnabled && clip.IsLink)
+                    {
+                        _linkPreviewService.TryLoadLinkMetadata(textData);
+                    }
+                }
+            }
+
+            if (clip.Data.TryGetValue(ClipboardFormat.Files, out var filesData))
+            {
+                FilesMetadataModel filesMetadata = new(filesData.Data);
+                filesData.Metadata = filesMetadata;
+                _storageService.AddFilesMetadata(filesMetadata, filesData.Id);
+            }
+
+            OnNewClipAdded(Clips, clip);
+
+            if (_settingsContext.CleanupType == CleanupType.Quantity)
+            {
+                DeleteOldClipsByQuantity(_settingsContext.CleanupQuantity, _settingsContext.IsFavoriteClipsCleaningEnabled);
+            }
+        }
+
+        public void InsertClips(IEnumerable<ClipModel> clips)
+        {
+            foreach (var clip in clips)
+            {
+                Clips.Add(clip);
+            }
+
+            Clips = [.. Clips.OrderByDescending(c => c.ClipTime)];
+            OnClipsCollectionChanged(Clips);
+        }
+
+        public void MoveClipToTop(ClipModel clip)
+        {
+            clip.ClipTime = DateTime.Now;
+            _storageService.UpdateClip(clip, GetNonEmptyOwnerId(clip));
+
+            // Move the clip only if it's not on the top
+            if (Clips.First() != clip)
+            {
+                Clips.Remove(clip);
+                Clips.Insert(0, clip);
+                OnClipMovedToTop(Clips, clip);
+            }
+        }
+
+        public void ToggleClipFavorite(ClipModel clip)
+        {
+            clip.IsFavorite = !clip.IsFavorite;
+            _storageService.UpdateClip(clip, GetNonEmptyOwnerId(clip));
+        }
+
+        public async Task SaveClipToFileAsync(DataModel dataModel, string newFilePath)
+        {
+            try
+            {
+                StorageFile newFile;
+
+                if (File.Exists(newFilePath))
+                {
+                    newFile = await StorageFile.GetFileFromPathAsync(newFilePath);
+                }
+                else
+                {
+                    var directory = Path.GetDirectoryName(newFilePath);
+
+                    if (string.IsNullOrEmpty(directory))
+                    {
+                        return;
+                    }
+
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
+
+                    var folderDestination = await StorageFolder.GetFolderFromPathAsync(directory);
+                    newFile = await folderDestination.CreateFileAsync(Path.GetFileName(newFilePath), CreationCollisionOption.ReplaceExisting);
+                }
+
+                if (dataModel.IsFile() && File.Exists(dataModel.Data))
+                {
+                    var originFile = await StorageFile.GetFileFromPathAsync(dataModel.Data);
+                    using var originStream = await originFile.OpenStreamForReadAsync();
+                    using var destinationStream = await newFile.OpenStreamForWriteAsync();
+
+                    await originStream.CopyToAsync(destinationStream);
+                    await destinationStream.FlushAsync();
+                }
+                else if (dataModel.Format == ClipboardFormat.Text)
+                {
+                    await FileIO.WriteTextAsync(newFile, dataModel.Data);
+                }
+            }
+            catch { }
+        }
+
+        public void DeleteClip(ClipModel clip, bool deleteFromDb = true)
+        {
+            Clips.Remove(clip);
+            foreach (var tag in clip.Tags)
+            {
+                tag.Clips.Remove(clip);
+                tag.TogglePropertyUpdate(nameof(tag.ClipsCount));
+            }
+            clip.Tags.Clear();
+            clip.ClearExternalDataFiles();
+            if (deleteFromDb)
+            {
+                _storageService.DeleteClip(clip.Id);
+            }
+            _ownerService.UnregisterClipOwner(clip);
+            OnClipDeleted(Clips, clip);
+        }
+
+        public void DeleteOldClipsByTime(DateTime cutoffTime, bool deleteFavoriteClips)
+        {
+            var clipsToDelete = Clips
+                .Where(clip => clip.ClipTime < cutoffTime && (deleteFavoriteClips || !clip.IsFavorite) && clip.Tags.All(tag => tag.IsCleaningEnabled))
+                .ToList();
+
+            _storageService.DeleteOldClipsByTime(cutoffTime, deleteFavoriteClips);
+
+            foreach (var clip in clipsToDelete)
+            {
+                DeleteClip(clip, false);
+            }
+        }
+
+        public void DeleteOldClipsByQuantity(int quantity, bool deleteFavoriteClips)
+        {
+            var filteredClips = Clips
+                .Where(clip => (deleteFavoriteClips || !clip.IsFavorite) && clip.Tags.All(tag => tag.IsCleaningEnabled))
+                .OrderByDescending(clip => clip.ClipTime)
+                .ToArray();
+
+            if (filteredClips.Length <= quantity)
+            {
+                return;
+            }
+
+            _storageService.DeleteOldClipsByQuantity(quantity, deleteFavoriteClips);
+
+            foreach (var clip in filteredClips.TakeLast(filteredClips.Length - quantity))
+            {
+                DeleteClip(clip, false);
+            }
+        }
+
+        public void DeleteClipsByFilter(Func<ClipModel, bool> clipsFilter)
+        {
+            var clipsToDelete = Clips
+                .Where(clipsFilter)
+                .ToList();
+
+            var clipIdsToDelete = clipsToDelete
+                .Select(clip => clip.Id)
+                .ToList();
+
+            foreach (var clip in clipsToDelete)
+            {
+                DeleteClip(clip, false);
+            }
+
+            // Deleting each clip one by one since we use advanced filter
+            Task.Run(() =>
+            {
+                foreach (var id in clipIdsToDelete)
+                {
+                    _storageService.DeleteClip(id);
+                }
+            });
+        }
+
+        protected virtual void OnNewClipAdded(IList<ClipModel> clips, ClipModel newClip)
+        {
+            NewClipAdded?.Invoke(this, new(clips, newClip));
+        }
+        protected virtual void OnClipMovedToTop(IList<ClipModel> clips, ClipModel newClip)
+        {
+            ClipMovedToTop?.Invoke(this, new(clips, newClip));
+        }
+        protected virtual void OnClipDeleted(IList<ClipModel> clips, ClipModel newClip)
+        {
+            ClipDeleted?.Invoke(this, new(clips, newClip));
+        }
+        protected virtual void OnClipsCollectionChanged(IList<ClipModel> clips)
+        {
+            ClipsCollectionChanged?.Invoke(this, new(clips));
+        }
+
+        private IList<ClipModel> ReadClipsFromStorage()
+        {
+            try
+            {
+                return [.. _storageService.GetClips(_ownerService.Owners.Values, _tagService.Tags)];
+            }
+            catch
+            {
+                _ = NativeHelper.MessageBox(IntPtr.Zero,
+                    "The data could not be retrieved from the database!\nIt may be corrupted. Try to reinstall the app",
+                    "clipboard-history-manager-windows - Database error",
+                    0x10);   // MB_ICONERROR | MB_OK
+
+                Environment.Exit(1);
+            }
+
+            return [];
+        }
+
+        private void ClipboardMonitor_ContentDetected(ClipboardMonitor sender, ClipboardSnapshot snapshot)
+        {
+            string? ownerPath = snapshot.OwnerPath;
+            byte[]? iconPixels = snapshot.OwnerIcon?.ToArray();
+
+            if (!string.IsNullOrEmpty(ownerPath) && IsOwnerPathExcluded(ownerPath))
+            {
+                return;
+            }
+
+            ClipModel clip = new();
+
+            foreach (var record in snapshot.Records)
+            {
+                if (!string.IsNullOrEmpty(record.Data) && record.Hash is not null && record.Hash.Length > 0)
+                {
+                    DataModel clipData = new(record.Format, record.Data, record.Hash.ToArray());
+                    clip.Data.TryAdd(record.Format, clipData);
+                }
+            }
+
+            if (clip.Data.Count == 0)
+            {
+                return;
+            }
+
+            App.Current.DispatcherQueue.TryEnqueue(() =>
+            {
+                _ownerService.RegisterClipOwner(clip, ownerPath, iconPixels);
+
+                if (!TryMoveDuplicateItem(clip))
+                {
+                    AddClip(clip);
+                }
+
+                if (_settingsContext.IsClipCopyMessageEnabled)
+                {
+                    ShowToolTipMessage(clip);
+                }
+            });
+        }
+
+        private bool IsOwnerPathExcluded(string ownerPath)
+        {
+            var normalizedPath = ownerPath.Replace('\\', '/');
+            try
+            {
+                var ownerFilter = _settingsContext.OwnerAppFilters.FirstOrDefault(filter =>
+                    string.Equals(normalizedPath, filter.Pattern.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase) || filter.IsMatch(normalizedPath));
+
+                if (ownerFilter is not null)
+                {
+                    ownerFilter.FilteredCount++;
+                    _settingsContext.SaveOwnerAppFilters();
+                    return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        private bool TryMoveDuplicateItem(ClipModel newClip)
+        {
+            if (Clips.FirstOrDefault(clip => clip.EqualDataTo(newClip)) is ClipModel toMove)
+            {
+                bool isMovedToTop = false;
+                if (!toMove.Equals(Clips.FirstOrDefault()))
+                {
+                    Clips.Remove(toMove);
+                    Clips.Insert(0, toMove);
+                    isMovedToTop = true;
+                    toMove.ClipTime = newClip.ClipTime;
+                }
+
+                if (toMove.Owner != newClip.Owner)
+                {
+                    _ownerService.UnregisterClipOwner(toMove);
+                    toMove.Owner = newClip.Owner;   // newClip.Owner is already registered
+                }
+
+                _storageService.UpdateClip(toMove, GetNonEmptyOwnerId(toMove));
+                newClip.Owner = null;
+                newClip.ClearExternalDataFiles();
+
+                if (isMovedToTop)
+                {
+                    OnClipMovedToTop(Clips, toMove);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void ShowToolTipMessage(ClipModel clip)
+        {
+            string iconGlyph = string.Empty;
+
+            if (clip.Data.ContainsKey(ClipboardFormat.Text))
+            {
+                iconGlyph = "\uE8E9";
+            }
+            else if (clip.Data.ContainsKey(ClipboardFormat.Png) || clip.Data.ContainsKey(ClipboardFormat.Bitmap))
+            {
+                iconGlyph = "\uE91B";
+            }
+            else if (clip.Data.ContainsKey(ClipboardFormat.Files))
+            {
+                iconGlyph = "\uE8B7";
+            }
+
+            BriefMessageWindow.ShowBriefMessage(iconGlyph);
+        }
+
+        private static int? GetNonEmptyOwnerId(ClipModel clip) => clip.Owner?.Id != 0 ? clip.Owner?.Id : null;
+    }
+}

@@ -1,0 +1,134 @@
+﻿using clipboard-history-manager-windows.Helper;
+using clipboard-history-manager-windows.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Windows.System;
+
+namespace clipboard-history-manager-windows.Hooks
+{
+    public sealed partial class KeyboardMonitor : IKeyboardMonitor, IDisposable
+    {
+        public event EventHandler<GlobalKeyboardHookEventArgs>? KeyboardEvent;
+
+        private readonly SettingsContext _settingsContext = App.Current.SettingsContext;
+        private readonly GlobalKeyboardHook _globalKeyboardHook;
+        private List<int> _previouslyPressedKeys = [];
+        private List<int> _activationShortcut = [];
+        private bool _activationShortcutPressed;
+
+        public KeyboardMonitor()
+        {
+            _globalKeyboardHook = new GlobalKeyboardHook();
+        }
+
+        public void StartMonitor()
+        {
+            _globalKeyboardHook.AddKeyboardHook();
+            _globalKeyboardHook.KeyboardHandler += GlobalKeyboardHook_KeyboardPressed;
+            _settingsContext.PropertyChanged += SettingsContext_PropertyChanged;
+            _activationShortcut = [.. _settingsContext.ActivationShortcut.Order()];
+        }
+
+        public void StopMonitor()
+        {
+            _globalKeyboardHook.RemoveKeyboardHook();
+            _globalKeyboardHook.KeyboardHandler -= GlobalKeyboardHook_KeyboardPressed;
+            _settingsContext.PropertyChanged -= SettingsContext_PropertyChanged;
+        }
+
+        private void SettingsContext_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(_settingsContext.ActivationShortcut))
+            {
+                _activationShortcut = [.. _settingsContext.ActivationShortcut.Order()];
+            }
+        }
+
+        private void GlobalKeyboardHook_KeyboardPressed(object? sender, GlobalKeyboardHookEventArgs args)
+        {
+            KeyboardEvent?.Invoke(this, args);
+            if (args.Handled)
+            {
+                return;
+            }
+            
+            var currentlyPressedKeys = new List<int>();
+            var pressedKey = args.KeyboardData.VirtualCode;
+
+            // If the last key pressed is a modifier key, then currentlyPressedKeys cannot possibly match with _activationKeys
+            // because _activationKeys contains exactly 1 non-modifier key. Hence, there's no need to check if `name` is a
+            // modifier key or to do any additional processing on it.
+            if (args.KeyboardState == GlobalKeyboardHook.KeyboardState.KeyDown ||
+                args.KeyboardState == GlobalKeyboardHook.KeyboardState.SysKeyDown)
+            {
+                // Check pressed modifier keys.
+                AddModifierKeys(currentlyPressedKeys);
+                currentlyPressedKeys.Add(pressedKey);
+            }
+
+            if (currentlyPressedKeys.Count == 0 && _previouslyPressedKeys.Count != 0)
+            {
+                // no keys pressed, we can enable activation shortcut again
+                _activationShortcutPressed = false;
+            }
+
+            _previouslyPressedKeys = currentlyPressedKeys;
+
+            if (currentlyPressedKeys.Count != _activationShortcut.Count)
+            {
+                return;
+            }
+
+            currentlyPressedKeys.Sort();
+
+            if (currentlyPressedKeys.SequenceEqual(_activationShortcut))
+            {
+                // avoid triggering this action multiple times as this will be called nonstop while keys are pressed
+                if (!_activationShortcutPressed)
+                {
+                    _activationShortcutPressed = true;
+                    var window = App.Current.ClipboardWindow;
+                    if (window.IsVisibleToUser)
+                    {
+                        window.HideWindow();
+                    }
+                    else
+                    {
+                        window.ShowWindow();
+                    }
+                    args.Handled = true;
+                }
+            }
+        }
+
+        private static void AddModifierKeys(List<int> currentlyPressedKeys)
+        {
+            if ((NativeHelper.GetAsyncKeyState((int)VirtualKey.Shift) & 0x8000) != 0)
+            {
+                currentlyPressedKeys.Add((int)VirtualKey.Shift);
+            }
+
+            if ((NativeHelper.GetAsyncKeyState((int)VirtualKey.Control) & 0x8000) != 0)
+            {
+                currentlyPressedKeys.Add((int)VirtualKey.Control);
+            }
+
+            if ((NativeHelper.GetAsyncKeyState((int)VirtualKey.Menu) & 0x8000) != 0)
+            {
+                currentlyPressedKeys.Add((int)VirtualKey.Menu);
+            }
+
+            if ((NativeHelper.GetAsyncKeyState((int)VirtualKey.LeftWindows) & 0x8000) != 0 ||
+                (NativeHelper.GetAsyncKeyState((int)VirtualKey.RightWindows) & 0x8000) != 0)
+            {
+                currentlyPressedKeys.Add((int)VirtualKey.LeftWindows);
+            }
+        }
+
+        public void Dispose()
+        {
+            _globalKeyboardHook?.Dispose();
+        }
+    }
+}

@@ -1,0 +1,175 @@
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
+using Microsoft.Windows.AppLifecycle;
+using Microsoft.Windows.AppNotifications;
+using Microsoft.Windows.AppNotifications.Builder;
+using Microsoft.Windows.Globalization;
+using clipboard-history-manager-windows.Contracts;
+using clipboard-history-manager-windows.Core;
+using clipboard-history-manager-windows.Helper;
+using clipboard-history-manager-windows.Hooks;
+using clipboard-history-manager-windows.Models;
+using clipboard-history-manager-windows.Services;
+using clipboard-history-manager-windows.Views.Clipboard;
+using clipboard-history-manager-windows.Views.Onboarding;
+using clipboard-history-manager-windows.Views.Settings;
+using System;
+using System.Globalization;
+using System.Linq;
+using System.Threading;
+
+namespace clipboard-history-manager-windows
+{
+    /// <summary>
+    /// Provides application-specific behavior to supplement the default Application class.
+    /// </summary>
+    public sealed partial class App : Application
+    {
+        /// <summary>
+        /// Gets the current <see cref="App"/> instance in use
+        /// </summary>
+        public new static App Current => (App)Application.Current;
+        public ExtendedActivationKind ActivationKind { get; init; }
+        public ClipboardWindow ClipboardWindow { get; private set; }
+        public IntPtr ClipboardWindowHandle => ClipboardWindow.Handle;
+        public SettingsContext SettingsContext { get; init; }
+        public IThemeService ThemeService { get; init; }
+
+        /// <summary>
+        /// Gets the <see cref="IServiceProvider"/> instance to resolve application services.
+        /// </summary>
+        public IServiceProvider Services { get; }
+
+        public Microsoft.UI.Dispatching.DispatcherQueue DispatcherQueue { get; private set; } = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+
+        private readonly string[] _launchArguments;
+        private readonly IKeyboardMonitor _keyboardMonitor;
+        private OnboardingWindow _onboardingWindow;
+
+        /// <summary>
+        /// Initializes the singleton application object.
+        /// </summary>
+        public App(string[] args)
+        {
+            ActivationKind = AppInstance.GetCurrent().GetActivatedEventArgs().Kind;
+            _launchArguments = args;
+            Services = ConfigureServices();
+            SettingsContext = Services.GetService<SettingsContext>()!;
+            ThemeService = Services.GetService<IThemeService>()!;
+            _keyboardMonitor = Services.GetService<IKeyboardMonitor>()!;
+
+            InitializeComponent();
+            SetCulture(SettingsContext.LanguageCode.Equals(string.Empty) ?
+                CultureInfo.CurrentCulture.TwoLetterISOLanguageName : SettingsContext.LanguageCode);
+
+            UnhandledException += (s, a) => AppInstance.Restart("-silent");
+        }
+
+        public App() : this(Environment.GetCommandLineArgs()) { }
+
+        /// <summary>
+        /// Invoked when the application is launched.
+        /// </summary>
+        /// <param name="args">Details about the launch request and process.</param>
+        protected override void OnLaunched(LaunchActivatedEventArgs args)
+        {
+            if (SettingsContext.IsAppFirstRun)
+            {
+                MigrateStartupTask();
+
+                // Show First Setup window only when user opens the app first time
+                _onboardingWindow = new OnboardingWindow();
+                _onboardingWindow.Closed += (s, a) =>  _onboardingWindow = null!;
+                _onboardingWindow.ShowOnScreenCenter();
+            }
+
+            ClipboardWindow = new ClipboardWindow();
+            ClipboardWindow.InitWindowContent();
+            ClipboardWindow.Closed += ClipboardWindow_Closed;
+
+            _keyboardMonitor.StartMonitor();
+
+            if (_launchArguments.Contains("-settings"))
+            {
+                SettingsWindow.ShowSettingsWindow();
+            }
+
+            var showStartNotification = !_launchArguments.Contains("-silent")
+                && ActivationKind != ExtendedActivationKind.StartupTask
+                && !SettingsContext.IsAppFirstRun
+                && SettingsContext.IsNotificationOnStartEnabled;
+
+            if (showStartNotification)
+            {
+                //AppNotificationManager.Default.Register();   // for unpackaged
+                AppNotificationManager.Default.Show(new AppNotificationBuilder()
+                    .AddText("AppNotification_Title".GetLocalizedResource())
+                    .AddText("AppNotification_Text".GetLocalizedFormatResource(
+                        KeyboardHelper.ShortcutToString(SettingsContext.ActivationShortcut, "+")))
+                    .BuildNotification());
+            }
+        }
+
+        private void ClipboardWindow_Closed(object sender, WindowEventArgs args)
+        {
+            ClipboardWindow.Closed -= ClipboardWindow_Closed;
+            _keyboardMonitor.StopMonitor();
+            Exit();
+        }
+
+        private static void MigrateStartupTask()
+        {
+            var createElevatedStartupTask = LegacyTaskSchedulerManager.IsHighestRunLevelEnabled() && AdministratorHelper.IsAppRunningAsAdministrator();
+            LegacyTaskSchedulerManager.DeleteStartupTask();
+
+            if (createElevatedStartupTask)
+            {
+                StartupManager.EnableElevatedStartup();
+            }
+        }
+
+        private static void SetCulture(string culture)
+        {
+            var cultureInfo = new CultureInfo(culture);
+
+            // Set the culture for the current thread
+            Thread.CurrentThread.CurrentCulture = cultureInfo;
+            Thread.CurrentThread.CurrentUICulture = cultureInfo;
+
+            // Ensure new threads will use this culture
+            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
+            ApplicationLanguages.PrimaryLanguageOverride = culture;
+        }
+
+        private static ServiceProvider ConfigureServices()
+        {
+            var services = new ServiceCollection();
+
+            // Settings
+            services.AddSingleton<SettingsContext>();
+
+            // Monitors
+            services.AddSingleton<ClipboardMonitor>();
+            services.AddSingleton<IKeyboardMonitor, KeyboardMonitor>();
+
+            // Services
+            services.AddSingleton<IStorageService>(sp =>
+            {
+                var monitor = sp.GetRequiredService<ClipboardMonitor>();
+                return SqliteService.CreateMain(monitor.HistoryFolderPath);
+            });
+            services.AddSingleton<IClipboardService, ClipboardService>();
+            services.AddSingleton<ISearchService, SearchService>();
+            services.AddSingleton<ILinkPreviewService, LinkPreviewService>();
+            services.AddSingleton<ICleanupDataService, CleanupDataService>();
+            services.AddSingleton<IThemeService, ThemeService>();
+            services.AddSingleton<IOwnerService, OwnerService>();
+            services.AddSingleton<ITagService, TagService>();
+            services.AddSingleton<IClipTransferService, ClipTransferService>();
+
+            return services.BuildServiceProvider();
+        }
+    }
+}

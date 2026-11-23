@@ -1,0 +1,65 @@
+﻿using Microsoft.UI.Xaml.Data;
+using clipboard-history-manager-windows.Core;
+using clipboard-history-manager-windows.Helper;
+using clipboard-history-manager-windows.Models;
+using clipboard-history-manager-windows.Models.Metadata;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Windows.Storage;
+
+namespace clipboard-history-manager-windows.Converters
+{
+    public partial class DataFooterInfoConverter : IValueConverter
+    {
+        private readonly string _filesAndFoldersCountDivider = "/Clipboard/ClipFooter_FilesAndFoldersCountDivider/Text".GetLocalizedResource();
+
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            return new TaskCompletionNotifier<string>(Task.Run(() => GetFooterInfo((Dictionary<ClipboardFormat, DataModel>)value)));
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            throw new NotImplementedException();
+        }
+
+        private async Task<string> GetFooterInfo(Dictionary<ClipboardFormat, DataModel> DataMap)
+        {
+            if (DataMap is not null)
+            {
+                if (DataMap.TryGetValue(ClipboardFormat.Text, out var textData))
+                {
+                    return "/Clipboard/ClipFooter_CharactersCount/Text".GetLocalizedFormatResource(textData.Data.Length);
+                }
+                if (DataMap.TryGetValue(ClipboardFormat.Png, out var imageData) || DataMap.TryGetValue(ClipboardFormat.Bitmap, out imageData))
+                {
+                    try
+                    {
+                        var file = await StorageFile.GetFileFromPathAsync(imageData.Data);
+                        var imageProps = await file.Properties.GetImagePropertiesAsync();
+                        return "/Clipboard/ClipFooter_ImageSize/Text".GetLocalizedFormatResource(imageProps.Width, imageProps.Height);
+                    }
+                    catch { }
+                }
+                if (DataMap.TryGetValue(ClipboardFormat.Files, out var filesData) && filesData.Metadata is FilesMetadataModel filesMetadata)
+                {
+                    var footerParts = new List<string>();
+
+                    if (filesMetadata.FilesCount > 0)
+                    {
+                        footerParts.Add("/Clipboard/ClipFooter_FilesCount/Text".GetLocalizedFormatResource(filesMetadata.FilesCount));
+                    }
+
+                    if (filesMetadata.FoldersCount > 0)
+                    {
+                        footerParts.Add("/Clipboard/ClipFooter_FoldersCount/Text".GetLocalizedFormatResource(filesMetadata.FoldersCount));
+                    }
+
+                    return string.Join(_filesAndFoldersCountDivider, footerParts);
+                }
+            }
+            return string.Empty;
+        }
+    }
+}

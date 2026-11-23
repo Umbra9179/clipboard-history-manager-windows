@@ -1,0 +1,87 @@
+﻿using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
+using Microsoft.Windows.AppLifecycle;
+using clipboard-history-manager-windows.Helper;
+using clipboard-history-manager-windows.Services;
+using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using WinRT;
+
+namespace clipboard-history-manager-windows
+{
+    public class Program
+    {
+        [STAThread]
+        static int Main(string[] args)
+        {
+            ComWrappersSupport.InitializeComWrappers();
+            AppActivationArguments activationArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
+            bool isRedirect;
+            try
+            {
+                isRedirect = DecideRedirection(activationArgs);
+            }
+            catch (COMException)
+            {
+                NativeHelper.MessageBox(IntPtr.Zero,
+                    "Unable to open this app in current mode",
+                    "Unable to open this app",
+                    0);
+                return 0;
+            }
+
+            if (!isRedirect)
+            {
+                Application.Start((p) =>
+                {
+                    var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
+                    SynchronizationContext.SetSynchronizationContext(context);
+                    _ = new App(args);
+                });
+            }
+
+            return 0;
+        }
+
+        private static bool DecideRedirection(AppActivationArguments args)
+        {
+            if (args.Kind == ExtendedActivationKind.StartupTask && StartupManager.IsElevatedTaskEnabled(out var elevatedTask))
+            {
+                try
+                {
+                    var runningTask = elevatedTask!.Run();
+                    return runningTask.State is Microsoft.Win32.TaskScheduler.TaskState.Queued or Microsoft.Win32.TaskScheduler.TaskState.Running;
+                }
+                catch { }
+            }
+
+            bool isRedirect = false;
+            AppInstance keyInstance = AppInstance.FindOrRegisterForKey(Windows.ApplicationModel.Package.Current.DisplayName);
+            if (!keyInstance.IsCurrent)
+            {
+                isRedirect = true;
+                RedirectActivationTo(args, keyInstance);
+            }
+
+            return isRedirect;
+        }
+
+        private static IntPtr redirectEventHandle = IntPtr.Zero;
+
+        public static void RedirectActivationTo(AppActivationArguments args, AppInstance keyInstance)
+        {
+            redirectEventHandle = NativeHelper.CreateEvent(IntPtr.Zero, true, false, null);
+            Task.Run(() =>
+            {
+                keyInstance.RedirectActivationToAsync(args).AsTask().Wait();
+                NativeHelper.SetEvent(redirectEventHandle);
+            });
+
+            uint CWMO_DEFAULT = 0;
+            uint INFINITE = 0xFFFFFFFF;
+            _ = NativeHelper.CoWaitForMultipleObjects(CWMO_DEFAULT, INFINITE, 1, [redirectEventHandle], out uint handleIndex);
+        }
+    }
+}

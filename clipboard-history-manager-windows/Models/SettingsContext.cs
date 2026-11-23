@@ -1,0 +1,633 @@
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.WinUI.Helpers;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.Windows.Globalization;
+using Microsoft.Windows.Storage;
+using clipboard-history-manager-windows.Converters;
+using clipboard-history-manager-windows.Core;
+using clipboard-history-manager-windows.Helper;
+using clipboard-history-manager-windows.Helper.WindowBackdrop;
+using clipboard-history-manager-windows.Services;
+using clipboard-history-manager-windows.Views.Clipboard;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using Windows.ApplicationModel;
+
+namespace clipboard-history-manager-windows.Models
+{
+    public partial class SettingsContext : ObservableObject
+    {
+        private readonly ApplicationDataContainer _localSettings;
+        private readonly ClipboardMonitor _clipboardMonitor;
+
+        #region Settings Window
+
+        #region General
+
+        private readonly List<string> _supportedLanguages;
+        private string? _languageCode;
+
+        [Settings(nameof(LanguageCode), DefaultValue = "")]
+        public string LanguageCode
+        {
+            get => _languageCode ??= GetSettingValue<string>();
+            set
+            {
+                if (SetSettingsProperty(ref _languageCode, value))
+                {
+                    OnPropertyChanged(nameof(LanguageIndex));
+                }
+            }
+        }
+        public int LanguageIndex
+        {
+            get => _supportedLanguages.IndexOf(LanguageCode);
+            set => LanguageCode = _supportedLanguages[value];
+        }
+
+
+        private List<int>? _activationShortcut;
+        public List<int> ActivationShortcutDefault { get; private set; } = [0x5B, 0x10, 0x56];   // Win + Shift + V
+
+        [Settings(nameof(ActivationShortcut))]
+        public List<int> ActivationShortcut
+        {
+            get => _activationShortcut ??= [.. KeyboardHelper.SortShortcut(GetSettingValue<List<int>>(ActivationShortcutDefault))];
+            set => SetSettingsProperty(ref _activationShortcut, value);
+        }
+
+
+        private bool? _isNotificationOnStartEnabled;
+
+        [Settings(nameof(IsNotificationOnStartEnabled), DefaultValue = true)]
+        public bool IsNotificationOnStartEnabled
+        {
+            get => _isNotificationOnStartEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isNotificationOnStartEnabled, value);
+        }
+
+        #endregion
+
+        #region Personalisation
+
+        private string? _theme;
+
+        [Settings(nameof(Theme))]
+        public ElementTheme Theme
+        {
+            get => EnumExtensions.FromDescription<ElementTheme>(_theme ??= GetSettingValue<string>(ElementTheme.Default.GetDescription()));
+            set
+            {
+                if (SetSettingsProperty(ref _theme, value.GetDescription()))
+                {
+                    App.Current.ThemeService.ApplyTheme();
+                }
+            }
+        }
+
+        private string? _windowBackdrop;
+        private readonly WindowBackdropType _windowBackdropDefault = WindowBackdropHelper.IsSystemBackdropSupported ? WindowBackdropType.Acrylic : WindowBackdropType.None;
+
+        [Settings(nameof(WindowBackdrop))]
+        public WindowBackdropType WindowBackdrop
+        {
+            get => EnumExtensions.FromDescription<WindowBackdropType>(_windowBackdrop ??= GetSettingValue<string>(_windowBackdropDefault.GetDescription()));
+            set
+            {
+                if (SetSettingsProperty(ref _windowBackdrop, value.GetDescription()))
+                {
+                    App.Current.ThemeService.ApplyWindowBackdrop();
+                }
+            }
+        }
+
+
+        private string? _windowBackgroundColor;
+        private readonly string _windowBackgroundColorDefault = WindowBackdropHelper.IsSystemBackdropSupported ? "#00000000" : "#3269797E";
+
+        [Settings("WindowBackgroundColor")]
+        public SolidColorBrush WindowBackgroundBrush
+        {
+            get => new((_windowBackgroundColor ??= GetSettingValue<string>(_windowBackgroundColorDefault)).ToColor());
+            set => SetSettingsProperty(ref _windowBackgroundColor, value.Color.ToHex());
+        }
+
+
+        private bool? _isCompactViewEnabled;
+
+        [Settings(nameof(IsCompactViewEnabled), DefaultValue = false)]
+        public bool IsCompactViewEnabled
+        {
+            get => _isCompactViewEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isCompactViewEnabled, value);
+        }
+
+
+        private bool? _isClipHoverPreviewInCompactViewEnabled;
+
+        [Settings(nameof(IsClipHoverPreviewInCompactViewEnabled), DefaultValue = false)]
+        public bool IsClipHoverPreviewInCompactViewEnabled
+        {
+            get => _isClipHoverPreviewInCompactViewEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isClipHoverPreviewInCompactViewEnabled, value);
+        }
+
+
+        private string? _timestampFormat;
+
+        [Settings(nameof(TimestampFormat))]
+        public TimestampFormat TimestampFormat
+        {
+            get => EnumExtensions.FromDescription<TimestampFormat>(_timestampFormat ??= GetSettingValue<string>(TimestampFormat.Absolute.GetDescription()));
+            set => SetSettingsProperty(ref _timestampFormat, value.GetDescription());
+        }
+
+
+        private string? _windowPosition;
+
+        [Settings(nameof(WindowPosition))]
+        public ClipboardWindowPosition WindowPosition
+        {
+            get => EnumExtensions.FromDescription<ClipboardWindowPosition>(_windowPosition ??= GetSettingValue<string>(ClipboardWindowPosition.Caret.GetDescription()));
+            set => SetSettingsProperty(ref _windowPosition, value.GetDescription());
+        }
+
+
+        private int? _windowWidth;
+        private static bool WindowWidthValidate(int value) => value >= WindowWidthLowerBound;
+
+        public static readonly int WindowWidthLowerBound = 320;
+
+        [Settings(nameof(WindowWidth), DefaultValue = 380, Validator = nameof(WindowWidthValidate))]
+        public int WindowWidth
+        {
+            get => _windowWidth ??= GetSettingValue<int>();
+            set => SetSettingsProperty(ref _windowWidth, value);
+        }
+
+
+        private int? _windowHeight;
+        private static bool WindowHeightValidate(int value) => value >= WindowHeightLowerBound;
+
+        public static readonly int WindowHeightLowerBound = 320;
+
+        [Settings(nameof(WindowHeight), DefaultValue = 400, Validator = nameof(WindowHeightValidate))]
+        public int WindowHeight
+        {
+            get => _windowHeight ??= GetSettingValue<int>();
+            set => SetSettingsProperty(ref _windowHeight, value);
+        }
+
+
+        private int? _windowMargin;
+        private static bool WindowMarginValidate(int value) => value >= WindowMarginLowerBound;
+
+        public static readonly int WindowMarginLowerBound = 0;
+
+        [Settings(nameof(WindowMargin), DefaultValue = 10, Validator = nameof(WindowMarginValidate))]
+        public int WindowMargin
+        {
+            get => _windowMargin ??= GetSettingValue<int>();
+            set => SetSettingsProperty(ref _windowMargin, value);
+        }
+
+
+        private bool? _isWindowResizeByMouseEnabled;
+
+        [Settings(nameof(IsWindowResizeByMouseEnabled), DefaultValue = false)]
+        public bool IsWindowResizeByMouseEnabled
+        {
+            get => _isWindowResizeByMouseEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isWindowResizeByMouseEnabled, value);
+        }
+
+        #endregion
+
+        #region Clipboard
+
+        private bool? _isClipsDragAndDropEnabled;
+
+        [Settings(nameof(IsClipsDragAndDropEnabled), DefaultValue = true)]
+        public bool IsClipsDragAndDropEnabled
+        {
+            // TODO
+            // Update after resolving the drag and drop issue
+            // See https://github.com/hpavlo/clipboard-history-manager-windows/issues/2
+            get => _isClipsDragAndDropEnabled ??= GetSettingValue<bool>() && !AdministratorHelper.IsAppRunningAsAdministrator();
+            set => SetSettingsProperty(ref _isClipsDragAndDropEnabled, value);
+        }
+
+
+        private bool? _isClipMovingToTopOnCopyingEnabled;
+
+        [Settings(nameof(IsClipMovingToTopOnCopyingEnabled), DefaultValue = true)]
+        public bool IsClipMovingToTopOnCopyingEnabled
+        {
+            get => _isClipMovingToTopOnCopyingEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isClipMovingToTopOnCopyingEnabled, value);
+        }
+
+
+        private bool? _isDeveloperStringCaseConversionsEnabled;
+
+        [Settings(nameof(IsDeveloperStringCaseConversionsEnabled), DefaultValue = false)]
+        public bool IsDeveloperStringCaseConversionsEnabled
+        {
+            get => _isDeveloperStringCaseConversionsEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isDeveloperStringCaseConversionsEnabled, value);
+        }
+
+
+        private bool? _isSearchFocusOnStartEnabled;
+
+        [Settings(nameof(IsSearchFocusOnStartEnabled), DefaultValue = false)]
+        public bool IsSearchFocusOnStartEnabled
+        {
+            get => _isSearchFocusOnStartEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isSearchFocusOnStartEnabled, value);
+        }
+
+
+        private bool? _isClearSearchOnOpenEnabled;
+
+        [Settings(nameof(IsClearSearchOnOpenEnabled), DefaultValue = true)]
+        public bool IsClearSearchOnOpenEnabled
+        {
+            get => _isClearSearchOnOpenEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isClearSearchOnOpenEnabled, value);
+        }
+
+
+        private bool? _isSetInitialTabOnOpenEnabled;
+
+        [Settings(nameof(IsSetInitialTabOnOpenEnabled), DefaultValue = true)]
+        public bool IsSetInitialTabOnOpenEnabled
+        {
+            get => _isSetInitialTabOnOpenEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isSetInitialTabOnOpenEnabled, value);
+        }
+
+
+        private bool? _isRememberWindowPinStateEnabled;
+
+        [Settings(nameof(IsRememberWindowPinStateEnabled), DefaultValue = false)]
+        public bool IsRememberWindowPinStateEnabled
+        {
+            get => _isRememberWindowPinStateEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isRememberWindowPinStateEnabled, value);
+        }
+
+
+        private bool? _isClipCopyMessageEnabled;
+
+        [Settings(nameof(IsClipCopyMessageEnabled), DefaultValue = true)]
+        public bool IsClipCopyMessageEnabled
+        {
+            get => _isClipCopyMessageEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isClipCopyMessageEnabled, value);
+        }
+
+        #endregion
+
+        #region Metadata
+
+        private bool? _isLinkPreviewLoadingEnabled;
+
+        [Settings(nameof(IsLinkPreviewLoadingEnabled), DefaultValue = true)]
+        public bool IsLinkPreviewLoadingEnabled
+        {
+            get => _isLinkPreviewLoadingEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isLinkPreviewLoadingEnabled, value);
+        }
+
+
+        private bool? _isHexColorPrefixRequired;
+
+        [Settings(nameof(IsHexColorPrefixRequired), DefaultValue = true)]
+        public bool IsHexColorPrefixRequired
+        {
+            get => _isHexColorPrefixRequired ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isHexColorPrefixRequired, value);
+        }
+
+        #endregion
+
+        #region Storage
+
+        private bool? _skipWarningMessageOnSettingsClipsErase;
+
+        [Settings(nameof(SkipWarningMessageOnSettingsClipsErase), DefaultValue = false)]
+        public bool SkipWarningMessageOnSettingsClipsErase
+        {
+            get => _skipWarningMessageOnSettingsClipsErase ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _skipWarningMessageOnSettingsClipsErase, value);
+        }
+
+
+        private bool? _isFavoriteClipsErasingEnabled;
+
+        [Settings(nameof(IsFavoriteClipsErasingEnabled), DefaultValue = true)]
+        public bool IsFavoriteClipsErasingEnabled
+        {
+            get => _isFavoriteClipsErasingEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isFavoriteClipsErasingEnabled, value);
+        }
+
+
+        private bool? _isTagProtectedClipsErasingEnabled;
+
+        [Settings(nameof(IsTagProtectedClipsErasingEnabled), DefaultValue = true)]
+        public bool IsTagProtectedClipsErasingEnabled
+        {
+            get => _isTagProtectedClipsErasingEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isTagProtectedClipsErasingEnabled, value);
+        }
+
+
+        private string? _cleanupType;
+
+        [Settings(nameof(CleanupType))]
+        public CleanupType CleanupType
+        {
+            get => EnumExtensions.FromDescription<CleanupType>(_cleanupType ??= GetSettingValue<string>(CleanupType.RetentionPeriod.GetDescription()));
+            set => SetSettingsProperty(ref _cleanupType, value.GetDescription());
+        }
+
+
+        private string? _cleanupTimeSpan;
+
+        [Settings(nameof(CleanupTimeSpan))]
+        public CleanupTimeSpan CleanupTimeSpan
+        {
+            get => EnumExtensions.FromDescription<CleanupTimeSpan>(_cleanupTimeSpan ??= GetSettingValue<string>(CleanupTimeSpan.Month.GetDescription()));
+            set => SetSettingsProperty(ref _cleanupTimeSpan, value.GetDescription());
+        }
+
+
+        private int? _cleanupQuantity;
+        private static bool CleanupQuantityValidate(int value) => value >= CleanupQuantityLowerBound && value <= CleanupQuantityUpperBound;
+
+        public static readonly int CleanupQuantityLowerBound = 10;
+        public static readonly int CleanupQuantityUpperBound = 10_000;
+
+        [Settings(nameof(CleanupQuantity), DefaultValue = 50, Validator = nameof(CleanupQuantityValidate))]
+        public int CleanupQuantity
+        {
+            get => _cleanupQuantity ??= GetSettingValue<int>();
+            set => SetSettingsProperty(ref _cleanupQuantity, value);
+        }
+
+
+        private bool? _isFavoriteClipsCleaningEnabled;
+
+        [Settings(nameof(IsFavoriteClipsCleaningEnabled), DefaultValue = false)]
+        public bool IsFavoriteClipsCleaningEnabled
+        {
+            get => _isFavoriteClipsCleaningEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isFavoriteClipsCleaningEnabled, value);
+        }
+
+
+        private bool? _isClipSizeValidationEnabled;
+
+        [Settings(nameof(IsClipSizeValidationEnabled), DefaultValue = true)]
+        public bool IsClipSizeValidationEnabled
+        {
+            get => _isClipSizeValidationEnabled ??= GetSettingValue<bool>();
+            set
+            {
+                if (SetSettingsProperty(ref _isClipSizeValidationEnabled, value))
+                {
+                    SetMaxDataSize(MaxClipSize);
+                }
+            }
+        }
+
+
+        private int? _maxClipSize;
+        private static bool MaxClipSizeValidate(int value) => value >= ClipSizeLowerBound && value <= ClipSizeUpperBound;
+        private void SetMaxDataSize(int value) => _clipboardMonitor.MaxDataSize = IsClipSizeValidationEnabled ? (ulong)value * 1024 * 1024 : ulong.MaxValue;
+
+        public static readonly int ClipSizeLowerBound = 1;
+        public static readonly int ClipSizeUpperBound = 64;
+
+        [Settings(nameof(MaxClipSize), DefaultValue = 8, Validator = nameof(MaxClipSizeValidate))]
+        public int MaxClipSize
+        {
+            get
+            {
+                if (_maxClipSize == null)
+                {
+                    _maxClipSize = GetSettingValue<int>();
+                    SetMaxDataSize(_maxClipSize.Value);
+                }
+                return _maxClipSize.Value;
+            }
+            set
+            {
+                if (SetSettingsProperty(ref _maxClipSize, value))
+                {
+                    SetMaxDataSize(value);
+                }
+            }
+        }
+
+        #endregion
+
+        #region Filters
+
+        private ObservableCollection<OwnerAppFilter>? _ownerAppFilters;
+        /// <summary>
+        /// Use <see cref="SaveOwnerAppFilters"/> to save changes
+        /// </summary>
+        [Settings(nameof(OwnerAppFilters))]
+        public ObservableCollection<OwnerAppFilter> OwnerAppFilters => _ownerAppFilters ??= GetSettingValue<ObservableCollection<OwnerAppFilter>>(new ObservableCollection<OwnerAppFilter>());
+        public void SaveOwnerAppFilters() => _localSettings.Values["OwnerAppFilters"] = JsonSerializer.Serialize(OwnerAppFilters);
+
+        #endregion
+
+        #endregion
+
+        #region Main Window
+
+        private bool? _isClipboardMonitoringEnabled;
+
+        [Settings(nameof(IsClipboardMonitoringEnabled), DefaultValue = true)]
+        public bool IsClipboardMonitoringEnabled
+        {
+            get => _isClipboardMonitoringEnabled ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _isClipboardMonitoringEnabled, value);
+        }
+
+
+        private bool? _skipWarningMessageOnMainWindowClipsErase;
+
+        [Settings(nameof(SkipWarningMessageOnMainWindowClipsErase), DefaultValue = false)]
+        public bool SkipWarningMessageOnMainWindowClipsErase
+        {
+            get => _skipWarningMessageOnMainWindowClipsErase ??= GetSettingValue<bool>();
+            set => SetSettingsProperty(ref _skipWarningMessageOnMainWindowClipsErase, value);
+        }
+
+        #endregion
+
+        public bool IsAppFirstRun { get; init; }
+
+        public SettingsContext(ClipboardMonitor clipboardMonitor)
+        {
+            _clipboardMonitor = clipboardMonitor;
+            _localSettings = ApplicationData.GetDefault().LocalSettings;
+            _supportedLanguages = ApplicationLanguages.ManifestLanguages.ToList();
+            _supportedLanguages.Insert(0, string.Empty);   // Default language
+
+            IsAppFirstRun = !_localSettings.Values.ContainsKey("AppVersion");
+            _localSettings.Values["AppVersion"] = Package.Current.Id.Version.ToFormattedString();
+
+            SetMaxDataSize(MaxClipSize);
+        }
+
+        private T GetSettingValue<T>(object? overrideDefault = null, [CallerMemberName] string? propertyName = null)
+        {
+            // Validate propertyName
+            if (string.IsNullOrEmpty(propertyName))
+            {
+                throw new ArgumentNullException(nameof(propertyName));
+            }
+
+            // Fetch PropertyInfo
+            var propInfo = GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException($"Property '{propertyName}' not found on {GetType().Name}.");
+
+            // Fetch SettingsAttribute
+            var attr = propInfo.GetCustomAttribute<Settings>()
+                ?? throw new InvalidOperationException($"Property '{propertyName}' is missing [Settings].");
+
+            if (string.IsNullOrEmpty(attr.Key))
+            {
+                throw new InvalidOperationException($"[Settings] on '{propertyName}' must have a non-empty Key.");
+            }
+
+            // Read raw stored value
+            object? rawValue = null;
+            if (_localSettings.Values.TryGetValue(attr.Key, out var saved))
+            {
+                rawValue = (saved is string s && typeof(T) != typeof(string)) ? JsonSerializer.Deserialize<T>(s) : saved;
+            }
+
+            // Determine candidate result
+            T result = PickValue(rawValue, overrideDefault, attr.DefaultValue);
+
+            // Validate via method, if specified
+            if (!string.IsNullOrEmpty(attr.Validator))
+            {
+                var method = GetType().GetMethod(attr.Validator, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException($"Validator method '{attr.Validator}' not found on {GetType().Name}.");
+
+                var isValid = method.Invoke(this, [result]) as bool?;
+                if (isValid != true)
+                {
+                    // Fallback to attribute default if validation fails
+                    result = PickValue(null, overrideDefault, attr.DefaultValue);
+                }
+            }
+
+            return result;
+
+            T PickValue(object? rawValue, object? overrideDefault, object? defaultValue)
+            {
+                // If the saved value is of the right type, use it
+                if (rawValue is T t)
+                {
+                    return t;
+                }
+                // Otherwise, if there’s an override default passed in, use that
+                else if (overrideDefault is T o)
+                {
+                    return o;
+                }
+                // Otherwise, if the attribute provided a default, use it
+                else if (attr.DefaultValue is T d)
+                {
+                    return d;
+                }
+                // If all else fails, fall back to T’s default
+                else
+                {
+                    return default!;
+                }
+            }
+        }
+
+        private bool SetSettingsProperty<T>([NotNullIfNotNull(nameof(newValue))] ref T field, T newValue, [CallerMemberName] string? propertyName = null)
+        {
+            // Validate propertyName
+            if (string.IsNullOrEmpty(propertyName))
+            {
+                throw new ArgumentNullException(nameof(propertyName));
+            }
+
+            // Fetch PropertyInfo
+            var propInfo = GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException($"Property '{propertyName}' not found on {GetType().Name}.");
+
+            // Fetch SettingsAttribute
+            var attr = propInfo.GetCustomAttribute<Settings>()
+                ?? throw new InvalidOperationException($"Property '{propertyName}' is missing [Settings].");
+
+            if (string.IsNullOrEmpty(attr.Key))
+            {
+                throw new InvalidOperationException($"[Settings] on '{propertyName}' must have a non-empty Key.");
+            }
+
+            // Validate incoming value
+            if (!string.IsNullOrEmpty(attr.Validator))
+            {
+                var method = GetType().GetMethod(attr.Validator, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException($"Validator method '{attr.Validator}' not found on {GetType().Name}.");
+
+                var isValid = method.Invoke(this, [newValue]) as bool?;
+                if (isValid != true)
+                {
+                    return false;
+                }
+            }
+
+            // Update backing field
+            if (!SetProperty(ref field, newValue, propertyName))
+            {
+                return false;
+            }
+
+            // Persist to settings store
+            _localSettings.Values[attr.Key] = (newValue is string || typeof(T).IsValueType) ? newValue : JsonSerializer.Serialize(newValue);
+
+            return true;
+        }
+
+
+        [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
+        public sealed class Settings : Attribute
+        {
+            // Required named argument
+            public string Key { get; set; } = string.Empty;
+
+            // Optional named arguments
+            public object? DefaultValue { get; set; }
+            public string? Validator { get; set; }
+
+            public Settings() { }
+
+            public Settings(string key)
+            {
+                Key = key;
+            }
+        }
+    }
+}

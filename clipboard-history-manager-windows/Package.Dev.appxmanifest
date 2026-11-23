@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  IgnorableNamespaces="uap rescap desktop">
+
+	<Identity
+	  Name="Dev.clipboard-history-manager-windowsClipboardManager"
+	  Publisher="CN=Pavlo Huk"
+	  Version="1.3.9.0" />
+
+	<Properties>
+		<DisplayName>clipboard-history-manager-windows Dev | Clipboard Manager</DisplayName>
+		<PublisherDisplayName>Pavlo Huk</PublisherDisplayName>
+		<Logo>Assets\StoreLogo.png</Logo>
+	</Properties>
+
+	<Dependencies>
+		<TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+	</Dependencies>
+
+	<Resources>
+		<Resource Language="ar-SA"/>
+		<Resource Language="de-DE"/>
+		<Resource Language="en-US"/>
+		<Resource Language="es-ES"/>
+		<Resource Language="fr-FR"/>
+		<Resource Language="ko-KR"/>
+		<Resource Language="pt-PT"/>
+		<Resource Language="tr-TR"/>
+		<Resource Language="uk-UA"/>
+		<Resource Language="zh-CN"/>
+	</Resources>
+
+	<Applications>
+		<Application Id="App"
+					 Executable="$targetnametoken$.exe"
+					 EntryPoint="$targetentrypoint$">
+			<uap:VisualElements DisplayName="clipboard-history-manager-windows Dev"
+								Description="ms-resource:AppDescription"
+								BackgroundColor="transparent"
+								Square150x150Logo="Assets\MedTile.png"
+								Square44x44Logo="Assets\AppList.png">
+				<uap:DefaultTile/>
+			</uap:VisualElements>
+
+			<Extensions>
+				<uap:Extension Category="windows.protocol">
+					<uap:Protocol ReturnResults="none" Name="clipboard-history-manager-windows-dev" />
+				</uap:Extension>
+
+				<uap5:Extension Category="windows.appExecutionAlias">
+					<uap5:AppExecutionAlias>
+						<!-- Alias name should be the same as AssemblyName in project file -->
+						<uap5:ExecutionAlias Alias="clipboard-history-manager-windowsDev.exe" />
+					</uap5:AppExecutionAlias>
+				</uap5:Extension>
+
+				<desktop:Extension Category="windows.startupTask" Executable="clipboard-history-manager-windowsDev.exe" EntryPoint="Windows.FullTrustApplication">
+					<desktop:StartupTask TaskId="clipboard-history-manager-windowsDevStartupTask" Enabled="true" DisplayName="clipboard-history-manager-windows Dev" />
+				</desktop:Extension>
+			</Extensions>
+		</Application>
+	</Applications>
+
+	<Capabilities>
+		<rescap:Capability Name="runFullTrust" />
+	</Capabilities>
+</Package>
